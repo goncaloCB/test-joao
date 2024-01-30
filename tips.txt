@@ -1,0 +1,42 @@
+Em Rust deves tentar sempre que possível fazer com que o compilador te impeça de fazer merda em runtime. Esse panic aí é mau sinal
+
+O find_closest_ratio já devia devolver o AspectRatio, e a melhor maneira que me ocorre de fazer isso é inverteres 
+o match: em vez de match f64 fazes match AspectRatio, até porque fazer comparações (==) a f64 é perigoso. impl AspectRatio { pub fn ratio(&self) -> f64 { ... } }
+
+use AspectRatio::*;
+let supported_ratios = vec![FourThree, ...];
+
+Põe isto em cima do pub enum AspectRatio:
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq, Hash, PartialOrd, Ord)]
+É um bocado chato, sim, acho que devia haver alguma coisa para ser menos verboso, não vejo por que enums 
+simples como essas não façam sempre isto (eu meti nas minhas do media_model ser reparares). Se quiseres saber porquê meter isto fazemos em chamada.
+
+
+quanto ao for loop pode passar a ser:
+supported_ratios.iter().min_by(|a,b| (a-aspect_ratio).abs().cmp((b-aspect_ratio).abs()))
+
+
+Código sugerido
+
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq, Hash, PartialOrd, Ord)]
+pub enum AspectRatio {
+    FourThree,
+    SixteenNine,
+    TwoThree,
+    OneOne,
+}
+
+pub fn get_aspect_ratio(width: f64, height: f64) -> AspectRatio {
+    use AspectRatio::*;
+    let aspect_ratio = width / height;
+    // unwrap: .min_by() returns None if iterator is empty, which can never happen here
+    [FourThree, SixteenNine, TwoThree, OneOne].iter()
+        .min_by(|a,b| (a-aspect_ratio).abs().cmp((b-aspect_ratio).abs()))
+        .unwrap()
+}
+
+
+Não me agrada a ideia de ele não guardar o (a - aspect_ratio).abs() entre as comparações, mas é uma cena tão rápida e 
+que no pior dos casos só é repetida 3 vezes que acho que não vale a pena estar a arranjar artimanhas para optimizar isso
+
+https://doc.rust-lang.org/std/iter/trait.Iterator.html Esta página é muito importante, recomendo que a estudes bem se quiseres ser proficiente em functional programming em Rust (edited) 
