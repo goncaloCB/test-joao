@@ -1,4 +1,4 @@
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Clone, Copy)]
 pub enum AspectRatio {
     FourThree,
     SixteenNine,
@@ -7,8 +7,9 @@ pub enum AspectRatio {
 }
 
 
-fn find_closest_ratio(aspect_ratio: f64) -> Option<(AspectRatio, f64)> {
+pub fn get_aspect_ratio(width: f64, height: f64) -> AspectRatio {
     use AspectRatio::*;
+    let aspect_ratio = width / height;
 
     let supported_ratios = [
         (FourThree, 4.0 / 3.0), 
@@ -17,20 +18,10 @@ fn find_closest_ratio(aspect_ratio: f64) -> Option<(AspectRatio, f64)> {
         (OneOne, 1.0)    
     ];
 
-    if let Some((name, closest_ratio)) = supported_ratios.iter().min_by(|&(_, a), &(_, b)| {
-        (a - aspect_ratio).abs().partial_cmp(&(b - aspect_ratio).abs()).unwrap()
-    }) {
-        Some((name.clone(), *closest_ratio))
-    } else {
-        None
-    }
-}
+    supported_ratios
+        .iter()
+        .min_by(|&(_, a), &(_, b)| (a - aspect_ratio).abs().partial_cmp(&(b - aspect_ratio).abs()).unwrap())
+        .map(|(name, _)| *name)
+        .expect("Unsupported aspect ratio")
 
-pub fn get_aspect_ratio(width: f64, height: f64) -> AspectRatio {
-    let aspect_ratio = width / height;
-    
-    match find_closest_ratio(aspect_ratio) {
-        Some((name, closest)) => name,
-        None => AspectRatio::OneOne,
-    }
 }
